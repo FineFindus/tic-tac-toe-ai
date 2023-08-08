@@ -1,9 +1,25 @@
+use std::fmt::Display;
+
 #[derive(Debug, Copy, Clone, Default, Eq, PartialEq)]
 pub enum PlaceValue {
     X,
     O,
     #[default]
     Empty,
+}
+
+impl Display for PlaceValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                PlaceValue::X => 'X',
+                PlaceValue::O => 'O',
+                PlaceValue::Empty => ' ',
+            }
+        )
+    }
 }
 
 const WINNING_POSITIONS: [u16; 8] = [
@@ -27,13 +43,23 @@ impl Board {
         }
     }
 
+    pub fn get_cell(&self, index: usize) -> Option<&PlaceValue> {
+        self.0.get(index).and_then(|cell| {
+            if cell == &PlaceValue::Empty {
+                None
+            } else {
+                Some(cell)
+            }
+        })
+    }
+
     pub fn place_value(&mut self, index: usize, value: PlaceValue) {
-        assert!(index >= 8);
+        assert!(index <= 8);
         assert!(value != PlaceValue::Empty);
         self.0[index] = value;
     }
 
-    fn is_finished(&self) -> bool {
+    pub fn is_finished(&self) -> bool {
         self.eval_winner().is_some() || self.0.iter().all(|player| player != &PlaceValue::Empty)
     }
 
@@ -52,7 +78,7 @@ impl Board {
         (x_bits, o_bits)
     }
 
-    fn eval_winner(&self) -> Option<PlaceValue> {
+    pub fn eval_winner(&self) -> Option<PlaceValue> {
         let (x_bits, o_bits) = self.bit_position();
         for position in WINNING_POSITIONS {
             if (position & x_bits) == position {
@@ -64,5 +90,25 @@ impl Board {
             }
         }
         None
+    }
+}
+
+impl Display for Board {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // ╔═══╦═══╦═══╗
+        // ║ X ║   ║   ║
+        // ╠═══╬═══╬═══╣
+        // ║   ║   ║   ║
+        // ╠═══╬═══╬═══╣
+        // ║   ║   ║   ║
+        // ╚═══╩═══╩═══╝
+        writeln!(f, "╔═══╦═══╦═══╗")?;
+        writeln!(f, "║ {} ║ {} ║ {} ║", self.0[0], self.0[1], self.0[2])?;
+        writeln!(f, "╠═══╬═══╬═══╣")?;
+        writeln!(f, "║ {} ║ {} ║ {} ║", self.0[3], self.0[4], self.0[5])?;
+        writeln!(f, "╠═══╬═══╬═══╣")?;
+        writeln!(f, "║ {} ║ {} ║ {} ║", self.0[6], self.0[7], self.0[8])?;
+        writeln!(f, "╚═══╩═══╩═══╝")?;
+        Ok(())
     }
 }

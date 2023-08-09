@@ -97,18 +97,18 @@ impl Board {
     }
 
     pub fn play(&mut self) -> usize {
-        let mut best_move = i32::MIN;
-        let mut index = 0;
-        for cell in self.available_cells() {
-            self.place_value(cell, PlaceValue::O);
-            let new_move = self.minimax(i32::MAX, false);
-            self.reset_cell(cell);
-            if new_move > best_move {
-                best_move = new_move;
-                index = cell;
-            }
-        }
-        index
+        let (cell, _score) = self
+            .available_cells()
+            .iter()
+            .map(|&cell| {
+                self.place_value(cell, PlaceValue::O);
+                let score = self.minimax(i32::MAX, false);
+                self.reset_cell(cell);
+                (cell, score)
+            })
+            .max_by(|(_, x), (_, y)| x.cmp(y))
+            .expect("Failed to get best move");
+        cell
     }
 
     fn available_cells(&self) -> Vec<usize> {

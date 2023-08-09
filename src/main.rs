@@ -19,7 +19,8 @@ fn play_game() {
         println!("{}", board);
         if turns % 2 == 0 {
             //second player (ai) turn
-            board.place_value(read_input(&board), PlaceValue::O);
+            let cell = board.play();
+            board.place_value(cell, PlaceValue::O);
             continue;
         }
         //first player turn
@@ -47,7 +48,7 @@ fn read_input(board: &Board) -> usize {
         .expect("Failed to read input");
 
     match input.trim().parse::<usize>() {
-        Ok(cell) if board.get_cell(cell).is_none() => {
+        Ok(cell) if cell <= 8 && board.get_cell(cell).is_none() => {
             return cell;
         }
         _ => {

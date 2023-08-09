@@ -55,12 +55,11 @@ impl Board {
 
     pub fn place_value(&mut self, index: usize, value: PlaceValue) {
         assert!(index <= 8);
-        assert!(value != PlaceValue::Empty);
         self.0[index] = value;
     }
 
     pub fn is_finished(&self) -> bool {
-        self.eval_winner().is_some() || self.0.iter().all(|player| player != &PlaceValue::Empty)
+        self.eval_winner().is_some() || self.0.iter().all(|cell| cell != &PlaceValue::Empty)
     }
 
     fn bit_position(&self) -> (u16, u16) {
@@ -90,6 +89,62 @@ impl Board {
             }
         }
         None
+    }
+
+    pub fn play(&mut self) -> usize {
+        let mut best_move = i32::MIN;
+        let mut index = 0;
+        for cell in self.available_cells() {
+            self.place_value(cell, PlaceValue::O);
+            let new_move = self.minimax(i32::MAX, false);
+            self.place_value(cell, PlaceValue::Empty);
+            if new_move > best_move {
+                best_move = new_move;
+                index = cell;
+            }
+        }
+        index
+    }
+
+    fn available_cells(&self) -> Vec<usize> {
+        self.0
+            .iter()
+            .enumerate()
+            .filter(|(_, cell)| cell == &&PlaceValue::Empty)
+            .map(|(index, _)| index)
+            .collect()
+    }
+
+    fn score_winner(&self) -> i32 {
+        match self.eval_winner() {
+            Some(PlaceValue::X) => -10,
+            Some(PlaceValue::O) => 10,
+            _ => 0,
+        }
+    }
+
+    fn minimax(&mut self, depth: i32, maximizing_player: bool) -> i32 {
+        if depth == 0 || self.is_finished() {
+            return self.score_winner();
+        }
+
+        if maximizing_player {
+            let mut value = i32::MIN;
+            for cell in self.available_cells() {
+                self.place_value(cell, PlaceValue::O);
+                value = value.max(self.minimax(depth - 1, false));
+                self.place_value(cell, PlaceValue::Empty);
+            }
+            return value;
+        } else {
+            let mut value = i32::MAX;
+            for cell in self.available_cells() {
+                self.place_value(cell, PlaceValue::X);
+                value = value.min(self.minimax(depth - 1, true));
+                self.place_value(cell, PlaceValue::Empty);
+            }
+            return value;
+        }
     }
 }
 

@@ -53,8 +53,13 @@ impl Board {
         })
     }
 
+    pub fn reset_cell(&mut self, index: usize) {
+        assert!(index < self.0.len());
+        self.0[index] = PlaceValue::Empty;
+    }
+
     pub fn place_value(&mut self, index: usize, value: PlaceValue) {
-        assert!(index <= 8);
+        assert!(index < self.0.len());
         self.0[index] = value;
     }
 
@@ -97,7 +102,7 @@ impl Board {
         for cell in self.available_cells() {
             self.place_value(cell, PlaceValue::O);
             let new_move = self.minimax(i32::MAX, false);
-            self.place_value(cell, PlaceValue::Empty);
+            self.reset_cell(cell);
             if new_move > best_move {
                 best_move = new_move;
                 index = cell;
@@ -133,7 +138,7 @@ impl Board {
             for cell in self.available_cells() {
                 self.place_value(cell, PlaceValue::O);
                 value = value.max(self.minimax(depth - 1, false));
-                self.place_value(cell, PlaceValue::Empty);
+                self.reset_cell(cell);
             }
             return value;
         } else {
@@ -141,7 +146,7 @@ impl Board {
             for cell in self.available_cells() {
                 self.place_value(cell, PlaceValue::X);
                 value = value.min(self.minimax(depth - 1, true));
-                self.place_value(cell, PlaceValue::Empty);
+                self.reset_cell(cell);
             }
             return value;
         }

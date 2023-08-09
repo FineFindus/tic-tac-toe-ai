@@ -104,9 +104,9 @@ impl Board {
                 self.place_value(cell, PlaceValue::O);
                 let score = self.minimax(0, i32::MIN, i32::MAX, false);
                 self.reset_cell(cell);
-                dbg!((cell, score))
+                (cell, score)
             })
-            .max_by(|(_, x), (_, y)| x.cmp(y))
+            .max_by(|(_, score_x), (_, score_y)| score_x.cmp(score_y))
             .expect("Failed to get best move");
         cell
     }
@@ -127,7 +127,6 @@ impl Board {
             _ => 0,
         }
     }
-
     fn minimax(
         &mut self,
         depth: i32,
@@ -139,33 +138,36 @@ impl Board {
             return self.score_winner(depth);
         }
 
-        if maximizing_player {
-            let mut value = i32::MIN;
-            for cell in self.available_cells() {
-                self.place_value(cell, PlaceValue::O);
-                let eval = self.minimax(depth + 1, alpha, beta, false);
-                self.reset_cell(cell);
-                value = value.max(eval);
-                alpha = alpha.max(eval);
-                if beta <= alpha {
-                    break;
-                }
-            }
-            return value;
+        let mut best_value = if maximizing_player {
+            i32::MIN
         } else {
-            let mut value = i32::MAX;
-            for cell in self.available_cells() {
-                self.place_value(cell, PlaceValue::X);
-                let eval = self.minimax(depth + 1, alpha, beta, true);
-                self.reset_cell(cell);
-                value = value.min(eval);
+            i32::MAX
+        };
+        let place_val = if maximizing_player {
+            PlaceValue::O
+        } else {
+            PlaceValue::X
+        };
+
+        for cell in self.available_cells() {
+            self.place_value(cell, place_val);
+            let eval = self.minimax(depth + 1, alpha, beta, !maximizing_player);
+            self.reset_cell(cell);
+
+            if maximizing_player {
+                best_value = best_value.max(eval);
+                alpha = alpha.max(eval);
+            } else {
+                best_value = best_value.min(eval);
                 beta = beta.min(eval);
-                if beta <= alpha {
-                    break;
-                }
             }
-            return value;
+
+            if beta <= alpha {
+                break;
+            }
         }
+
+        best_value
     }
 }
 

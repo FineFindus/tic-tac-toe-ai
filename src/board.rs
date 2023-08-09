@@ -102,9 +102,9 @@ impl Board {
             .iter()
             .map(|&cell| {
                 self.place_value(cell, PlaceValue::O);
-                let score = self.minimax(i32::MAX, false);
+                let score = self.minimax(0, false);
                 self.reset_cell(cell);
-                (cell, score)
+                dbg!((cell, score))
             })
             .max_by(|(_, x), (_, y)| x.cmp(y))
             .expect("Failed to get best move");
@@ -120,24 +120,24 @@ impl Board {
             .collect()
     }
 
-    fn score_winner(&self) -> i32 {
+    fn score_winner(&self, depth: i32) -> i32 {
         match self.eval_winner() {
-            Some(PlaceValue::X) => -10,
-            Some(PlaceValue::O) => 10,
+            Some(PlaceValue::X) => depth - 10,
+            Some(PlaceValue::O) => 10 - depth,
             _ => 0,
         }
     }
 
     fn minimax(&mut self, depth: i32, maximizing_player: bool) -> i32 {
-        if depth == 0 || self.is_finished() {
-            return self.score_winner();
+        if self.is_finished() {
+            return self.score_winner(depth);
         }
 
         if maximizing_player {
             let mut value = i32::MIN;
             for cell in self.available_cells() {
                 self.place_value(cell, PlaceValue::O);
-                value = value.max(self.minimax(depth - 1, false));
+                value = value.max(self.minimax(depth + 1, false));
                 self.reset_cell(cell);
             }
             return value;
@@ -145,7 +145,7 @@ impl Board {
             let mut value = i32::MAX;
             for cell in self.available_cells() {
                 self.place_value(cell, PlaceValue::X);
-                value = value.min(self.minimax(depth - 1, true));
+                value = value.min(self.minimax(depth + 1, true));
                 self.reset_cell(cell);
             }
             return value;

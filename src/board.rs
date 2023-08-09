@@ -102,7 +102,7 @@ impl Board {
             .iter()
             .map(|&cell| {
                 self.place_value(cell, PlaceValue::O);
-                let score = self.minimax(0, false);
+                let score = self.minimax(0, i32::MIN, i32::MAX, false);
                 self.reset_cell(cell);
                 dbg!((cell, score))
             })
@@ -128,7 +128,13 @@ impl Board {
         }
     }
 
-    fn minimax(&mut self, depth: i32, maximizing_player: bool) -> i32 {
+    fn minimax(
+        &mut self,
+        depth: i32,
+        mut alpha: i32,
+        mut beta: i32,
+        maximizing_player: bool,
+    ) -> i32 {
         if self.is_finished() {
             return self.score_winner(depth);
         }
@@ -137,16 +143,26 @@ impl Board {
             let mut value = i32::MIN;
             for cell in self.available_cells() {
                 self.place_value(cell, PlaceValue::O);
-                value = value.max(self.minimax(depth + 1, false));
+                let eval = self.minimax(depth + 1, alpha, beta, false);
                 self.reset_cell(cell);
+                value = value.max(eval);
+                alpha = alpha.max(eval);
+                if beta <= alpha {
+                    break;
+                }
             }
             return value;
         } else {
             let mut value = i32::MAX;
             for cell in self.available_cells() {
                 self.place_value(cell, PlaceValue::X);
-                value = value.min(self.minimax(depth + 1, true));
+                let eval = self.minimax(depth + 1, alpha, beta, true);
                 self.reset_cell(cell);
+                value = value.min(eval);
+                beta = beta.min(eval);
+                if beta <= alpha {
+                    break;
+                }
             }
             return value;
         }
